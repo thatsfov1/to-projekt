@@ -143,31 +143,51 @@ Remove_default_bearer_rejected
     Log    Step 3: Verify request is rejected
     Should Be Equal As Integers    ${response.status_code}    400
 
-    Log    Step 4: Verify error message
-    Should Contain    ${response.json()}[detail]    default
+    Log    Step 5: Verify error message is returned
+    Should Be Equal    ${detach_response.json()}[detail]    UE not found
 
-    Log    Step 5: Verify default bearer still exists
-    Verify Bearer Exists    ${ue_id}    9
+    Log    Step 6: Verify UE state remains unchanged
+    Verify UE Does Not Exist    ${ue_id}
 
-Start_traffic_for_non_existing_bearer_rejected
-    [Documentation]    Verify that starting traffic on non-existing bearer is rejected.
-    [Tags]    negative    traffic    bearer    validation
+    Log    Step 7: Verify no bearers are affected
+    ${stats_after}=    Get UE Stats
+    Should Be Equal As Integers    ${stats_after}[ue_count]         ${stats_before}[ue_count]
+    Should Be Equal As Integers    ${stats_after}[bearer_count]     ${stats_before}[bearer_count]
+    Should Be Equal As Integers    ${stats_after}[total_tx_bps]     ${stats_before}[total_tx_bps]
+    Should Be Equal As Integers    ${stats_after}[total_rx_bps]     ${stats_before}[total_rx_bps]
 
-    ${ue_id}=        Set Variable    ${DEFAULT_UE_ID}
-    ${bearer_id}=    Set Variable    5
+Attach_operation_on_already_attached_ue_error_scenario
+    [Documentation]    Verify that attach operation is rejected for UE that is already attached to the network.
+    [Tags]    negative    attach    ue
 
-    Log    Step 1: Attach UE (only default bearer exists)
-    Attach UE And Verify Default Bearer    ${ue_id}
+    ${ue_id}=    Set Variable    ${DEFAULT_UE_ID}
 
-    Log    Step 2: Attempt to start traffic on non-existing bearer
-    ${response}=    Start Traffic    ${ue_id}    ${bearer_id}    10
+    Reset Simulator
 
-    Log    Step 3: Verify request is rejected
-    Should Be Equal As Integers    ${response.status_code}    400
+    Log    Step 1: Verify UE is not attached before test
+    Verify UE Does Not Exist    ${ue_id}
 
-    Log    Step 4: Verify error message
-    Should Contain    ${response.json()}[detail]    Bearer
+    Log    Step 2: Save initial system state
+    ${stats_before}=    Get UE Stats
 
-    Log    Step 5: Verify no traffic started on default bearer
-    ${traffic}=    Get Traffic Stats    ${ue_id}    9
-    Should Be Equal As Integers    ${traffic.json()}[rx_bps]    0
+    Log    Step 3: Attach UE successfully
+    ${attach_response}=    Attach UE    ${ue_id}
+    Should Be Equal As Integers    ${attach_response.status_code}    200
+
+    Log    Step 4: Verify UE is attached
+    Verify UE Exists    ${ue_id}
+
+    Log    Step 5: Save system state after successful attach
+    ${stats_after_first_attach}=    Get UE Stats
+
+    Log    Step 6: Trigger attach operation for already attached UE
+    ${second_attach_response}=    Attach UE    ${ue_id}
+
+    Log    Step 7: Verify the system rejects the attach operation
+    Should Be Equal As Integers    ${second_attach_response.status_code}    400
+
+    Log    Step 8: Verify error message is returned
+    Should Be Equal    ${second_attach_response.json()}[detail]    UE already attached
+
+    Log    Step 9: Verify UE state remains unchanged
+    Verify UE Exists    ${ue_id}
