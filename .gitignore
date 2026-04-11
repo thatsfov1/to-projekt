@@ -10,3 +10,34 @@ output.xml
 
 __pycache__/
 *.pyc
+
+
+Aggregated_transfer_stats_match_sum_of_per_bearer_speeds_and_default_bearer_add_rejected
+    [Tags]    positive    negative    bearer    transfer    stats
+
+    Reset Simulator
+    Attach UE And Verify Default Bearer    ${DEFAULT_UE_ID}
+    Add Bearer And Verify    ${DEFAULT_UE_ID}    1
+    Add Bearer And Verify    ${DEFAULT_UE_ID}    2
+    Add Bearer And Verify    ${DEFAULT_UE_ID}    3
+    Start Transfer And Verify    ${DEFAULT_UE_ID}    9    20
+    Start Transfer And Verify    ${DEFAULT_UE_ID}    1    30
+    Start Transfer And Verify    ${DEFAULT_UE_ID}    2    50
+
+    ${speed_bearer_9}=    Get Bearer Transfer Speed    ${DEFAULT_UE_ID}    9
+    ${speed_bearer_1}=    Get Bearer Transfer Speed    ${DEFAULT_UE_ID}    1
+    ${speed_bearer_2}=    Get Bearer Transfer Speed    ${DEFAULT_UE_ID}    2
+    ${speed_bearer_3}=    Get Bearer Transfer Speed    ${DEFAULT_UE_ID}    3
+
+    Should Be Equal As Integers    ${speed_bearer_3}    0
+
+    ${expected_total}=    Evaluate    ${speed_bearer_9} + ${speed_bearer_1} + ${speed_bearer_2} + ${speed_bearer_3}
+    ${total_response}=    Get Total Transfer    ${DEFAULT_UE_ID}    kbps
+    Should Be Equal As Integers    ${total_response.status_code}    200
+    Should Be Equal As Integers    ${total_response.json()}[speed]    ${expected_total}
+
+    ${add_default_response}=    Add Bearer    ${DEFAULT_UE_ID}    9
+    Should Be Equal As Integers    ${add_default_response.status_code}    400
+
+    ${total_after_rejected}=    Get Total Transfer    ${DEFAULT_UE_ID}    kbps
+    Should Be Equal As Integers    ${total_after_rejected.json()}[speed]    ${expected_total}

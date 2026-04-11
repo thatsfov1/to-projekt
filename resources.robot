@@ -105,33 +105,35 @@ Add Bearer And Verify
 
 Verify Bearer Exists
     [Arguments]    ${ue_id}    ${bearer_id}
-    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}/bearers    expected_status=any
+    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}    expected_status=any
     Should Be Equal As Integers    ${response.status_code}    200
-    List Should Contain Value    ${response.json()}[bearers]    ${bearer_id}
+    Dictionary Should Contain Key    ${response.json()}[bearers]    ${bearer_id}
 
-Start Transfer
-    [Arguments]    ${ue_id}    ${bearer_id}    ${speed}
-    ${body}=    Create Dictionary    speed=${speed}
-    ${response}=    POST On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}/transfer    json=${body}    expected_status=any
-    RETURN    ${response}
-
-Start Transfer And Verify
-    [Arguments]    ${ue_id}    ${bearer_id}    ${speed}
-    ${response}=    Start Transfer    ${ue_id}    ${bearer_id}    ${speed}
-    Should Be Equal As Integers    ${response.status_code}    200
-
-Get Transfer
-    [Arguments]    ${ue_id}    ${bearer_id}    ${unit}=kbps
-    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}/transfer?unit=${unit}    expected_status=any
-    RETURN    ${response}
-
-Get Bearer Transfer Speed
+Verify Bearer Does Not Exist
     [Arguments]    ${ue_id}    ${bearer_id}
-    ${response}=    Get Transfer    ${ue_id}    ${bearer_id}    kbps
+    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}    expected_status=any
     Should Be Equal As Integers    ${response.status_code}    200
-    RETURN    ${response.json()}[speed]
+    Dictionary Should Not Contain Key    ${response.json()}[bearers]    ${bearer_id}
 
-Get Total Transfer
-    [Arguments]    ${ue_id}    ${unit}=kbps
-    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}/transfer?unit=${unit}    expected_status=any
+Start Traffic
+    [Arguments]    ${ue_id}    ${bearer_id}    ${mbps}    ${protocol}=tcp
+    ${body}=    Create Dictionary    protocol=${protocol}    Mbps=${mbps}
+    ${response}=    POST On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${body}    expected_status=any
     RETURN    ${response}
+
+Start Traffic And Verify
+    [Arguments]    ${ue_id}    ${bearer_id}    ${mbps}    ${protocol}=tcp
+    ${response}=    Start Traffic    ${ue_id}    ${bearer_id}    ${mbps}    ${protocol}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+Get Traffic Stats
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    RETURN    ${response}
+
+Get UE Stats For UE
+    [Arguments]    ${ue_id}
+    ${params}=      Create Dictionary    ue_id=${ue_id}
+    ${response}=    GET On Session    ${SESSION}    /ues/stats    params=${params}    expected_status=any
+    Should Be Equal As Integers    ${response.status_code}    200
+    RETURN    ${response.json()}

@@ -41,3 +41,27 @@ Detach_operation_on_disconnected_ue_error_scenario
     Should Be Equal As Integers    ${stats_after}[total_rx_bps]     ${stats_before}[total_rx_bps]
 
 
+Detach_clears_bearer_traffic_state_no_ghost_traffic_after_reattach
+    [Tags]    negative    attach    detach    bearer    traffic    state
+
+    Reset Simulator
+    Attach UE And Verify Default Bearer    ${DEFAULT_UE_ID}
+    Add Bearer And Verify    ${DEFAULT_UE_ID}    3
+    Start Traffic And Verify    ${DEFAULT_UE_ID}    3    10
+
+    ${stats_active}=    Get UE Stats For UE    ${DEFAULT_UE_ID}
+    Should Be True    ${stats_active}[total_rx_bps] > 0
+
+    Detach UE And Verify Gone    ${DEFAULT_UE_ID}
+    Verify Stats Are Zero
+
+    Attach UE And Verify Default Bearer    ${DEFAULT_UE_ID}
+
+    ${traffic_response}=    Get Traffic Stats    ${DEFAULT_UE_ID}    9
+    Should Be Equal As Integers    ${traffic_response.status_code}    200
+    Should Be Equal As Integers    ${traffic_response.json()}[rx_bps]    0
+
+    ${stats_after_reattach}=    Get UE Stats For UE    ${DEFAULT_UE_ID}
+    Should Be Equal As Integers    ${stats_after_reattach}[total_rx_bps]    0
+
+    Verify Bearer Does Not Exist    ${DEFAULT_UE_ID}    3
