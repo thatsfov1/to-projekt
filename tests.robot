@@ -39,3 +39,5 @@ Detach_operation_on_disconnected_ue_error_scenario
     Should Be Equal As Integers    ${stats_after}[bearer_count]     ${stats_before}[bearer_count]
     Should Be Equal As Integers    ${stats_after}[total_tx_bps]     ${stats_before}[total_tx_bps]
     Should Be Equal As Integers    ${stats_after}[total_rx_bps]     ${stats_before}[total_rx_bps]
+
+

@@ -76,3 +76,62 @@ Verify Clean State
     ${ues}=    Get UE List
     Length Should Be    ${ues}[ues]    0
     Verify Stats Are Zero
+
+
+Attach UE And Verify Default Bearer
+    [Arguments]    ${ue_id}
+    ${response}=    Attach UE    ${ue_id}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Verify UE Exists    ${ue_id}
+    Verify Bearer Exists    ${ue_id}    9
+
+Detach UE And Verify Gone
+    [Arguments]    ${ue_id}
+    ${response}=    Detach UE    ${ue_id}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Verify UE Does Not Exist    ${ue_id}
+
+Add Bearer
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${bearer_id}
+    ${response}=    POST On Session    ${SESSION}    /ues/${ue_id}/bearers    json=${body}    expected_status=any
+    RETURN    ${response}
+
+Add Bearer And Verify
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    Add Bearer    ${ue_id}    ${bearer_id}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Verify Bearer Exists    ${ue_id}    ${bearer_id}
+
+Verify Bearer Exists
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}/bearers    expected_status=any
+    Should Be Equal As Integers    ${response.status_code}    200
+    List Should Contain Value    ${response.json()}[bearers]    ${bearer_id}
+
+Start Transfer
+    [Arguments]    ${ue_id}    ${bearer_id}    ${speed}
+    ${body}=    Create Dictionary    speed=${speed}
+    ${response}=    POST On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}/transfer    json=${body}    expected_status=any
+    RETURN    ${response}
+
+Start Transfer And Verify
+    [Arguments]    ${ue_id}    ${bearer_id}    ${speed}
+    ${response}=    Start Transfer    ${ue_id}    ${bearer_id}    ${speed}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+Get Transfer
+    [Arguments]    ${ue_id}    ${bearer_id}    ${unit}=kbps
+    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}/transfer?unit=${unit}    expected_status=any
+    RETURN    ${response}
+
+Get Bearer Transfer Speed
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    Get Transfer    ${ue_id}    ${bearer_id}    kbps
+    Should Be Equal As Integers    ${response.status_code}    200
+    RETURN    ${response.json()}[speed]
+
+Get Total Transfer
+    [Arguments]    ${ue_id}    ${unit}=kbps
+    ${response}=    GET On Session    ${SESSION}    /ues/${ue_id}/transfer?unit=${unit}    expected_status=any
+    RETURN    ${response}
