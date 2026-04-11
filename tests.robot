@@ -48,7 +48,7 @@ Detach_clears_bearer_traffic_state_no_ghost_traffic_after_reattach
     Attach UE And Verify Default Bearer    ${DEFAULT_UE_ID}
     Add Bearer And Verify    ${DEFAULT_UE_ID}    3
     Start Traffic And Verify    ${DEFAULT_UE_ID}    3    10
-
+    Sleep    1s
     ${stats_active}=    Get UE Stats For UE    ${DEFAULT_UE_ID}
     Should Be True    ${stats_active}[total_rx_bps] > 0
 
@@ -65,3 +65,29 @@ Detach_clears_bearer_traffic_state_no_ghost_traffic_after_reattach
     Should Be Equal As Integers    ${stats_after_reattach}[total_rx_bps]    0
 
     Verify Bearer Does Not Exist    ${DEFAULT_UE_ID}    3
+
+Aggregated_traffic_stats_match_sum_of_per_bearer_rx_bps_and_default_bearer_add_rejected
+    [Tags]    positive    negative    bearer    traffic    stats
+
+    Reset Simulator
+    Attach UE And Verify Default Bearer    ${DEFAULT_UE_ID}
+    Add Bearer And Verify    ${DEFAULT_UE_ID}    1
+    Add Bearer And Verify    ${DEFAULT_UE_ID}    2
+    Add Bearer And Verify    ${DEFAULT_UE_ID}    3
+    Start Traffic And Verify    ${DEFAULT_UE_ID}    9    20
+    Start Traffic And Verify    ${DEFAULT_UE_ID}    1    30
+    Start Traffic And Verify    ${DEFAULT_UE_ID}    2    50
+    Sleep    1s
+    ${ue_stats}=        Get UE Stats For UE Details    ${DEFAULT_UE_ID}
+    ${details}=         Set Variable    ${ue_stats}[details]
+    Log    ${details}
+    ${ue_key}=          Convert To String    ${DEFAULT_UE_ID}
+    ${ue_details}=      Set Variable    ${details}[${ue_key}]
+    ${stats_3}=         Get Traffic Stats    ${DEFAULT_UE_ID}    3
+    ${rx_9}=            Set Variable    ${ue_details}[9]
+    ${rx_1}=            Set Variable    ${ue_details}[1]
+    ${rx_2}=            Set Variable    ${ue_details}[2]
+    ${rx_3}=            Set Variable    ${stats_3.json()}[rx_bps]
+    Should Be Equal As Integers    ${rx_3}    0
+    ${expected_total}=  Evaluate    ${rx_9} + ${rx_1} + ${rx_2} + ${rx_3}
+    Should Be Equal As Integers    ${ue_stats}[total_rx_bps]    ${expected_total}

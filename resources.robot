@@ -137,3 +137,11 @@ Get UE Stats For UE
     ${response}=    GET On Session    ${SESSION}    /ues/stats    params=${params}    expected_status=any
     Should Be Equal As Integers    ${response.status_code}    200
     RETURN    ${response.json()}
+
+
+Get UE Stats For UE Details
+    [Arguments]    ${ue_id}
+    ${params}=      Create Dictionary    ue_id=${ue_id}    include_details=true
+    ${response}=    GET On Session    ${SESSION}    /ues/stats    params=${params}    expected_status=any
+    Should Be Equal As Integers    ${response.status_code}    200
+    RETURN    ${response.json()}
