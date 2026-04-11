@@ -42,6 +42,7 @@ Detach_operation_on_disconnected_ue_error_scenario
 
 
 Detach_clears_bearer_traffic_state_no_ghost_traffic_after_reattach
+    [Documentation]    Verify that detach clears bearer traffic state and no ghost traffic appears after UE reattach.
     [Tags]    negative    attach    detach    bearer    traffic    state
 
     Reset Simulator
@@ -67,6 +68,7 @@ Detach_clears_bearer_traffic_state_no_ghost_traffic_after_reattach
     Verify Bearer Does Not Exist    ${DEFAULT_UE_ID}    3
 
 Aggregated_traffic_stats_match_sum_of_per_bearer_rx_bps_and_default_bearer_add_rejected
+    [Documentation]    Verify that aggregated UE traffic equals the sum of per-bearer RX rates.
     [Tags]    positive    negative    bearer    traffic    stats
 
     Reset Simulator
