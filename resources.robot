@@ -170,3 +170,39 @@ Then UE ${ue_id} should not have bearer ${bearer_id}
 
 UE ${ue_id} should still have default bearer
     Verify Bearer Exists    ${ue_id}    9
+
+Given UE ${ue_id} is not connected to the network
+    Verify UE Does Not Exist    ${ue_id}
+
+Current system statistics are captured
+    ${stats}=    Get UE Stats
+    Set Test Variable    ${CAPTURED_STATS}    ${stats}
+
+When detach is requested for UE ${ue_id}
+    ${response}=    Detach UE    ${ue_id}
+    Set Test Variable    ${DETACH_RESPONSE}    ${response}
+
+Then detach request for UE ${ue_id} should be rejected
+    Should Be Equal As Integers    ${DETACH_RESPONSE.status_code}    400
+    Should Be Equal    ${DETACH_RESPONSE.json()}[detail]    UE not found
+
+UE ${ue_id} should remain disconnected
+    Verify UE Does Not Exist    ${ue_id}
+
+System statistics should remain unchanged
+    ${stats_after}=    Get UE Stats
+    Should Be Equal As Integers    ${stats_after}[ue_count]         ${CAPTURED_STATS}[ue_count]
+    Should Be Equal As Integers    ${stats_after}[bearer_count]     ${CAPTURED_STATS}[bearer_count]
+    Should Be Equal As Integers    ${stats_after}[total_tx_bps]     ${CAPTURED_STATS}[total_tx_bps]
+    Should Be Equal As Integers    ${stats_after}[total_rx_bps]     ${CAPTURED_STATS}[total_rx_bps]
+
+When non-existing bearer ${bearer_id} is removed from UE ${ue_id}
+    ${response}=    Remove Bearer    ${ue_id}    ${bearer_id}
+    Set Test Variable    ${REMOVE_BEARER_RESPONSE}    ${response}
+
+Then remove request for bearer ${bearer_id} from UE ${ue_id} should be rejected
+    Should Be Equal As Integers    ${REMOVE_BEARER_RESPONSE.status_code}    400
+    Should Contain    ${REMOVE_BEARER_RESPONSE.json()}[detail]    Bearer
+
+UE ${ue_id} should not have bearer ${bearer_id}
+    Verify Bearer Does Not Exist    ${ue_id}    ${bearer_id}
