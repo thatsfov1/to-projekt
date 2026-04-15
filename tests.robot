@@ -159,3 +159,26 @@ Add_bearer_rejected_for_duplicate_bearer_id
 
     Log    Step 6: Verify bearer still exists only once
     Verify Bearer Exists    ${ue_id}    ${bearer_id}
+
+Remove_dedicated_bearer_success_scenario
+    [Documentation]    Verify that a dedicated bearer can be removed successfully from an attached UE.
+    [Tags]    positive    bearer    remove
+
+    ${ue_id}=        Set Variable    ${DEFAULT_UE_ID}
+    ${bearer_id}=    Set Variable    1
+
+    Log    Step 1: Attach UE and verify default bearer exists
+    Attach UE And Verify Default Bearer    ${ue_id}
+
+    Log    Step 2: Add dedicated bearer
+    Add Bearer And Verify    ${ue_id}    ${bearer_id}
+
+    Log    Step 3: Remove dedicated bearer
+    ${response}=    Remove Bearer    ${ue_id}    ${bearer_id}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+    Log    Step 4: Verify bearer no longer exists
+    Verify Bearer Does Not Exist    ${ue_id}    ${bearer_id}
+
+    Log    Step 5: Verify default bearer still exists
+    Verify Bearer Exists    ${ue_id}    9
