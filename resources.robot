@@ -150,3 +150,23 @@ Remove Bearer
     [Arguments]    ${ue_id}    ${bearer_id}
     ${response}=    DELETE On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}    expected_status=any
     RETURN    ${response}
+
+Given UE ${ue_id} is attached with default bearer
+    Attach UE And Verify Default Bearer    ${ue_id}
+
+
+UE ${ue_id} has dedicated bearer ${bearer_id}
+    Add Bearer And Verify    ${ue_id}    ${bearer_id}
+
+
+When dedicated bearer ${bearer_id} is removed from UE ${ue_id}
+    ${response}=    Remove Bearer    ${ue_id}    ${bearer_id}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+
+Then UE ${ue_id} should not have bearer ${bearer_id}
+    Verify Bearer Does Not Exist    ${ue_id}    ${bearer_id}
+
+
+UE ${ue_id} should still have default bearer
+    Verify Bearer Exists    ${ue_id}    9
