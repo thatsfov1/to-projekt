@@ -121,3 +121,41 @@ Start_traffic_rejected_for_value_above_max_limit
     ${stats_after}=    Get UE Stats For UE    ${ue_id}
     Should Be Equal As Integers    ${stats_after}[total_rx_bps]    ${stats_before}[total_rx_bps]
     Should Be Equal As Integers    ${stats_after}[total_tx_bps]    ${stats_before}[total_tx_bps]
+
+Add_dedicated_bearer_success_scenario
+    [Documentation]    Verify that a dedicated bearer can be added to an attached UE.
+    [Tags]    positive    bearer    add
+
+    ${ue_id}=        Set Variable    ${DEFAULT_UE_ID}
+    ${bearer_id}=    Set Variable    1
+
+    Log    Step 1: Attach UE and verify default bearer exists
+    Attach UE And Verify Default Bearer    ${ue_id}
+
+    Log    Step 2: Add dedicated bearer and verify it exists
+    Add Bearer And Verify    ${ue_id}    ${bearer_id}
+
+Add_bearer_rejected_for_duplicate_bearer_id
+    [Documentation]    Verify that adding the same bearer twice is rejected.
+    [Tags]    negative    bearer    add
+
+    ${ue_id}=        Set Variable    ${DEFAULT_UE_ID}
+    ${bearer_id}=    Set Variable    1
+
+    Log    Step 1: Attach UE
+    Attach UE And Verify Default Bearer    ${ue_id}
+
+    Log    Step 2: Add bearer for the first time
+    Add Bearer And Verify    ${ue_id}    ${bearer_id}
+
+    Log    Step 3: Try to add the same bearer again
+    ${response}=    Add Bearer    ${ue_id}    ${bearer_id}
+
+    Log    Step 4: Verify request is rejected
+    Should Be Equal As Integers    ${response.status_code}    400
+
+    Log    Step 5: Verify error message
+    Should Contain    ${response.json()}[detail]    Bearer
+
+    Log    Step 6: Verify bearer still exists only once
+    Verify Bearer Exists    ${ue_id}    ${bearer_id}
