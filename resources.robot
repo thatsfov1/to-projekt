@@ -145,3 +145,8 @@ Get UE Stats For UE Details
     ${response}=    GET On Session    ${SESSION}    /ues/stats    params=${params}    expected_status=any
     Should Be Equal As Integers    ${response.status_code}    200
     RETURN    ${response.json()}
+
+Remove Bearer
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    DELETE On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}    expected_status=any
+    RETURN    ${response}

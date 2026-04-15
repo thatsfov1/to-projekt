@@ -3,6 +3,7 @@ Resource    resources.robot
 
 Suite Setup       Create Api Session
 Suite Teardown    Delete All Sessions
+Test Setup        Reset Simulator
 Test Teardown     Verify Clean State
 
 
@@ -12,8 +13,6 @@ Detach_operation_on_disconnected_ue_error_scenario
     [Tags]    negative    detach    ue
 
     ${ue_id}=    Set Variable    ${DEFAULT_UE_ID}
-
-    Reset Simulator
 
     Log    Step 1: Verify UE is not attached to network
     Verify UE Does Not Exist    ${ue_id}
@@ -45,7 +44,6 @@ Detach_clears_bearer_traffic_state_no_ghost_traffic_after_reattach
     [Documentation]    Verify that detach clears bearer traffic state and no ghost traffic appears after UE reattach.
     [Tags]    negative    attach    detach    bearer    traffic    state
 
-    Reset Simulator
     Attach UE And Verify Default Bearer    ${DEFAULT_UE_ID}
     Add Bearer And Verify    ${DEFAULT_UE_ID}    3
     Start Traffic And Verify    ${DEFAULT_UE_ID}    3    10
@@ -71,7 +69,6 @@ Aggregated_traffic_stats_match_sum_of_per_bearer_rx_bps_and_default_bearer_add_r
     [Documentation]    Verify that aggregated UE traffic equals the sum of per-bearer RX rates.
     [Tags]    positive    negative    bearer    traffic    stats
 
-    Reset Simulator
     Attach UE And Verify Default Bearer    ${DEFAULT_UE_ID}
     Add Bearer And Verify    ${DEFAULT_UE_ID}    1
     Add Bearer And Verify    ${DEFAULT_UE_ID}    2
@@ -93,3 +90,34 @@ Aggregated_traffic_stats_match_sum_of_per_bearer_rx_bps_and_default_bearer_add_r
     Should Be Equal As Integers    ${rx_3}    0
     ${expected_total}=  Evaluate    ${rx_9} + ${rx_1} + ${rx_2} + ${rx_3}
     Should Be Equal As Integers    ${ue_stats}[total_rx_bps]    ${expected_total}
+
+Start_traffic_rejected_for_value_above_max_limit
+    [Documentation]    Verify that traffic start is rejected when requested transfer exceeds maximum allowed limit (100 Mbps).
+    [Tags]    negative    traffic    bearer    validation
+
+    ${ue_id}=    Set Variable    ${DEFAULT_UE_ID}
+    ${invalid_rate}=    Set Variable    101
+
+    Log    Step 1: Attach UE and verify default bearer exists
+    Attach UE And Verify Default Bearer    ${ue_id}
+
+    Log    Step 2: Save initial stats
+    ${stats_before}=    Get UE Stats For UE    ${ue_id}
+
+    Log    Step 3: Attempt to start traffic above maximum limit
+    ${response}=    Start Traffic    ${ue_id}    9    ${invalid_rate}
+
+    Log    Step 4: Verify request is rejected
+    Should Be Equal As Integers    ${response.status_code}    400
+
+    Log    Step 5: Verify error message
+    Should Be Equal    ${response.json()}[detail]    Invalid transfer rate
+
+    Log    Step 6: Verify no traffic was started
+    ${traffic}=    Get Traffic Stats    ${ue_id}    9
+    Should Be Equal As Integers    ${traffic.json()}[rx_bps]    0
+
+    Log    Step 7: Verify system stats remain unchanged
+    ${stats_after}=    Get UE Stats For UE    ${ue_id}
+    Should Be Equal As Integers    ${stats_after}[total_rx_bps]    ${stats_before}[total_rx_bps]
+    Should Be Equal As Integers    ${stats_after}[total_tx_bps]    ${stats_before}[total_tx_bps]
