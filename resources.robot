@@ -118,6 +118,7 @@ Add Bearer And Verify
     ${response}=    Add Bearer    ${ue_id}    ${bearer_id}
     Should Be Equal As Integers    ${response.status_code}    200
     Verify Bearer Exists    ${ue_id}    ${bearer_id}
+    RETURN    ${response}
 
 Remove Bearer
     [Arguments]    ${ue_id}    ${bearer_id}
@@ -183,6 +184,12 @@ Start traffic operation for UE ${ue_id} at ${bearer_id} should be rejected and t
 UE ${ue_id} is attached with default bearer
     Attach UE And Verify Default Bearer    ${ue_id}
 
+Reattach UE ${ue_id} with default bearer
+    ${response}=    Attach UE    ${ue_id}
+    Verify UE Exists    ${ue_id}
+    Verify Bearer Exists    ${ue_id}    ${DEFAULT_BEARER_ID}
+    Set Test Variable    ${ATTACH_RESPONSE}    ${response}
+
 UE ${ue_id} has dedicated bearer ${bearer_id}
     Add Bearer And Verify    ${ue_id}    ${bearer_id}
 
@@ -214,6 +221,13 @@ Detach request for UE ${ue_id} should be rejected
     Should Be Equal As Integers    ${DETACH_RESPONSE.status_code}    400
     Should Be Equal    ${DETACH_RESPONSE.json()}[detail]    UE not found
 
+Attach request for UE ${ue_id} should be rejected
+    Should Be Equal As Integers    ${ATTACH_RESPONSE.status_code}    400
+
+Attach request for UE ${ue_id} should be rejected with message ${error_message}
+    Should Be Equal As Integers    ${ATTACH_RESPONSE.status_code}    400
+    Should Be Equal    ${ATTACH_RESPONSE.json()}[detail]    ${error_message}
+
 UE ${ue_id} should remain disconnected
     Verify UE Does Not Exist    ${ue_id}
 
@@ -235,9 +249,6 @@ Remove request for bearer ${bearer_id} from UE ${ue_id} should be rejected
 Attach duplicated bearer ${bearer_id} to UE ${ue_id}
     ${response}=    Add Bearer    ${ue_id}    ${bearer_id}
     Set Test Variable    ${ATTACH_RESPONSE}    ${response}
-
-Attach operation should be rejected
-    Should Be Equal As Integers    ${ATTACH_RESPONSE.status_code}    400
 
 UE ${ue_id} is attached with active traffic on a dedicated bearer
     Attach UE And Verify Default Bearer    ${ue_id}
@@ -295,3 +306,6 @@ Total UE traffic should equal the sum of per-bearer traffic for UE ${ue_id}
     ${rx_3}=            Set Variable    ${TRAFFIC_STATS_BEARER_3.json()}[rx_bps]
     ${expected_total}=  Evaluate    ${rx_9} + ${rx_1} + ${rx_2} + ${rx_3}
     Should Be Equal As Integers    ${UE_STATS_WITH_DETAILS}[total_rx_bps]    ${expected_total}
+
+UE ${ue_id} exists
+    Verify UE Exists    ${ue_id}
