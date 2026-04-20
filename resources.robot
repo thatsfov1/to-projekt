@@ -206,3 +206,60 @@ Then remove request for bearer ${bearer_id} from UE ${ue_id} should be rejected
 
 UE ${ue_id} should not have bearer ${bearer_id}
     Verify Bearer Does Not Exist    ${ue_id}    ${bearer_id}
+
+Given UE ${ue_id} is attached with active traffic on a dedicated bearer
+    Attach UE And Verify Default Bearer    ${ue_id}
+    Add Bearer And Verify    ${ue_id}    3
+    Start Traffic And Verify    ${ue_id}    3    10
+    Sleep    1s
+    ${stats_active}=    Get UE Stats For UE    ${ue_id}
+    Should Be True    ${stats_active}[total_rx_bps] > 0
+
+When UE ${ue_id} detaches and then reattaches
+    Detach UE And Verify Gone    ${ue_id}
+    Verify Stats Are Zero
+    Attach UE And Verify Default Bearer    ${ue_id}
+
+Then UE ${ue_id} should have no leftover traffic after reattach
+    ${traffic_response}=    Get Traffic Stats    ${ue_id}    9
+    Should Be Equal As Integers    ${traffic_response.status_code}    200
+    Should Be Equal As Integers    ${traffic_response.json()}[rx_bps]    0
+    ${stats_after_reattach}=    Get UE Stats For UE    ${ue_id}
+    Should Be Equal As Integers    ${stats_after_reattach}[total_rx_bps]    0
+
+And dedicated bearer used before detach should be removed for UE ${ue_id}
+    Verify Bearer Does Not Exist    ${ue_id}    3
+
+Given UE ${ue_id} is attached with default and three dedicated bearers
+    Attach UE And Verify Default Bearer    ${ue_id}
+    Add Bearer And Verify    ${ue_id}    1
+    Add Bearer And Verify    ${ue_id}    2
+    Add Bearer And Verify    ${ue_id}    3
+
+And UE ${ue_id} has traffic running on selected bearers
+    Start Traffic And Verify    ${ue_id}    9    20
+    Start Traffic And Verify    ${ue_id}    1    30
+    Start Traffic And Verify    ${ue_id}    2    50
+    Sleep    1s
+
+When detailed traffic statistics are requested for UE ${ue_id}
+    ${ue_stats}=        Get UE Stats For UE Details    ${ue_id}
+    ${details}=         Set Variable    ${ue_stats}[details]
+    ${ue_key}=          Convert To String    ${ue_id}
+    ${ue_details}=      Set Variable    ${details}[${ue_key}]
+    ${stats_3}=         Get Traffic Stats    ${ue_id}    3
+    Set Test Variable    ${UE_STATS_WITH_DETAILS}    ${ue_stats}
+    Set Test Variable    ${UE_DETAILS_FOR_TEST}      ${ue_details}
+    Set Test Variable    ${TRAFFIC_STATS_BEARER_3}   ${stats_3}
+
+Then dedicated bearer without started traffic should report zero rate for UE ${ue_id}
+    Should Be Equal As Integers    ${TRAFFIC_STATS_BEARER_3.status_code}    200
+    Should Be Equal As Integers    ${TRAFFIC_STATS_BEARER_3.json()}[rx_bps]    0
+
+And total UE traffic should equal the sum of per-bearer traffic for UE ${ue_id}
+    ${rx_9}=            Set Variable    ${UE_DETAILS_FOR_TEST}[9]
+    ${rx_1}=            Set Variable    ${UE_DETAILS_FOR_TEST}[1]
+    ${rx_2}=            Set Variable    ${UE_DETAILS_FOR_TEST}[2]
+    ${rx_3}=            Set Variable    ${TRAFFIC_STATS_BEARER_3.json()}[rx_bps]
+    ${expected_total}=  Evaluate    ${rx_9} + ${rx_1} + ${rx_2} + ${rx_3}
+    Should Be Equal As Integers    ${UE_STATS_WITH_DETAILS}[total_rx_bps]    ${expected_total}
