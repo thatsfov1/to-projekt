@@ -39,74 +39,23 @@ Aggregated_traffic_stats_match_sum_of_per_bearer_rx_bps_and_default_bearer_add_r
     Then dedicated bearer without started traffic should report zero rate for UE ${DEFAULT_UE_ID}
     And total UE traffic should equal the sum of per-bearer traffic for UE ${DEFAULT_UE_ID}
 
-Start_traffic_rejected_for_value_above_max_limit
-    [Documentation]    Verify that traffic start is rejected when requested transfer exceeds maximum allowed limit (100 Mbps).
-    [Tags]    negative    traffic    bearer    validation
-
-    ${ue_id}=    Set Variable    ${DEFAULT_UE_ID}
-    ${invalid_rate}=    Set Variable    101
-
-    Log    Step 1: Attach UE and verify default bearer exists
-    Attach UE And Verify Default Bearer    ${ue_id}
-
-    Log    Step 2: Save initial stats
-    ${stats_before}=    Get UE Stats For UE    ${ue_id}
-
-    Log    Step 3: Attempt to start traffic above maximum limit
-    ${response}=    Start Traffic    ${ue_id}    9    ${invalid_rate}
-
-    Log    Step 4: Verify request is rejected
-    Should Be Equal As Integers    ${response.status_code}    400
-
-    Log    Step 5: Verify error message
-    Should Be Equal    ${response.json()}[detail]    Invalid transfer rate
-
-    Log    Step 6: Verify no traffic was started
-    ${traffic}=    Get Traffic Stats    ${ue_id}    9
-    Should Be Equal As Integers    ${traffic.json()}[rx_bps]    0
-
-    Log    Step 7: Verify system stats remain unchanged
-    ${stats_after}=    Get UE Stats For UE    ${ue_id}
-    Should Be Equal As Integers    ${stats_after}[total_rx_bps]    ${stats_before}[total_rx_bps]
-    Should Be Equal As Integers    ${stats_after}[total_tx_bps]    ${stats_before}[total_tx_bps]
-
-Add_dedicated_bearer_success_scenario
-    [Documentation]    Verify that a dedicated bearer can be added to an attached UE.
-    [Tags]    positive    bearer    add
-
-    ${ue_id}=        Set Variable    ${DEFAULT_UE_ID}
-    ${bearer_id}=    Set Variable    1
-
-    Log    Step 1: Attach UE and verify default bearer exists
-    Attach UE And Verify Default Bearer    ${ue_id}
-
-    Log    Step 2: Add dedicated bearer and verify it exists
-    Add Bearer And Verify    ${ue_id}    ${bearer_id}
-
 Add_bearer_rejected_for_duplicate_bearer_id
     [Documentation]    Verify that adding the same bearer twice is rejected.
     [Tags]    negative    bearer    add
 
-    ${ue_id}=        Set Variable    ${DEFAULT_UE_ID}
-    ${bearer_id}=    Set Variable    1
+    Given UE ${DEFAULT_UE_ID} is attached with default bearer
+    And UE ${DEFAULT_UE_ID} has dedicated bearer ${TEST_BEARER_ID}
+    When attach duplicated bearer ${TEST_BEARER_ID} to UE ${DEFAULT_UE_ID}
+    Then attach operation should be rejected
+    And UE ${DEFAULT_UE_ID} should have bearer ${TEST_BEARER_ID}
+    
+Start_traffic_rejected_for_value_above_max_limit
+    [Documentation]    Verify that traffic start is rejected when requested transfer exceeds maximum allowed limit (100 Mbps).
+    [Tags]    negative    traffic    bearer    validation
 
-    Log    Step 1: Attach UE
-    Attach UE And Verify Default Bearer    ${ue_id}
-
-    Log    Step 2: Add bearer for the first time
-    Add Bearer And Verify    ${ue_id}    ${bearer_id}
-
-    Log    Step 3: Try to add the same bearer again
-    ${response}=    Add Bearer    ${ue_id}    ${bearer_id}
-
-    Log    Step 4: Verify request is rejected
-    Should Be Equal As Integers    ${response.status_code}    400
-
-    Log    Step 5: Verify error message
-    Should Contain    ${response.json()}[detail]    Bearer
-
-    Log    Step 6: Verify bearer still exists only once
-    Verify Bearer Exists    ${ue_id}    ${bearer_id}
+    Given UE ${DEFAULT_UE_ID} is attached with default bearer    
+    When start traffic is requested for ${DEFAULT_UE_ID} at ${DEFAULT_BEARER_ID} with ${TRANSFER_SPEED_ABOVE_LIMIT_MBPS} transfer speed
+    Then start traffic operation for UE ${DEFAULT_UE_ID} at ${DEFAULT_BEARER_ID} should be rejected and traffic wasnt started
 
 Remove_dedicated_bearer_success_scenario
     [Documentation]    Verify that a dedicated bearer can be removed successfully from an attached UE.
@@ -161,8 +110,6 @@ Attach_operation_on_already_attached_ue_error_scenario
     [Tags]    negative    attach    ue
 
     ${ue_id}=    Set Variable    ${DEFAULT_UE_ID}
-
-    Reset Simulator
 
     Log    Step 1: Verify UE is not attached before test
     Verify UE Does Not Exist    ${ue_id}
