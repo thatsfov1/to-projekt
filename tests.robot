@@ -41,6 +41,28 @@ Remove_non_existing_bearer_rejected_scenario
     And UE ${DEFAULT_UE_ID} should still have default bearer
     And UE ${DEFAULT_UE_ID} should not have bearer 3
 
+Stop_traffic_clears_bearer_and_ue_statistics_scenario
+    [Documentation]    Verify that stopping traffic clears bearer traffic counters and aggregated UE statistics.
+    [Tags]    positive    traffic    bearer    stop    stats
+
+    Given UE ${DEFAULT_UE_ID} is attached with default bearer
+    When traffic is started for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with rate 25
+    Then traffic should be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    When traffic is stopped for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    Then traffic should be cleared for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    UE ${DEFAULT_UE_ID} should have zero aggregated traffic statistics
+
+Add_bearer_to_non_existing_ue_rejected_scenario
+    [Documentation]    Verify that adding a dedicated bearer to a non-existing UE is rejected.
+    [Tags]    negative    bearer    add    ue
+
+    Given UE ${DEFAULT_UE_ID} is not connected to the network
+    Current system statistics are captured
+    When dedicated bearer ${TEST_BEARER_ID} is added to UE ${DEFAULT_UE_ID}
+    Then add bearer request for UE ${DEFAULT_UE_ID} should be rejected
+    UE ${DEFAULT_UE_ID} should remain disconnected
+    System statistics should remain unchanged
+
 # ==========================
 
 # Yevhenii

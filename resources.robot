@@ -167,6 +167,11 @@ Start Traffic And Verify
     ${response}=    Start Traffic    ${ue_id}    ${bearer_id}    ${mbps}    ${protocol}
     Should Be Equal As Integers    ${response.status_code}    200
     
+Stop Traffic
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    DELETE On Session    ${SESSION}    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    RETURN    ${response}
+
 # ==========================
 
 # DOMAIN LEVEL LANGUAGE KEYWORDS 
@@ -309,3 +314,45 @@ Total UE traffic should equal the sum of per-bearer traffic for UE ${ue_id}
 
 UE ${ue_id} exists
     Verify UE Exists    ${ue_id}
+
+Traffic is started for UE ${ue_id} on bearer ${bearer_id} with rate ${mbps}
+    ${response}=    Start Traffic    ${ue_id}    ${bearer_id}    ${mbps}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Sleep    1s
+
+Traffic should be active for UE ${ue_id} on bearer ${bearer_id}
+    ${traffic}=    Get Traffic Stats    ${ue_id}    ${bearer_id}
+    Should Be Equal As Integers    ${traffic.status_code}    200
+    Should Be True    ${traffic.json()}[rx_bps] > 0
+
+    ${ue_stats}=    Get UE Stats For UE    ${ue_id}
+    Should Be True    ${ue_stats}[total_rx_bps] > 0
+
+Traffic is stopped for UE ${ue_id} on bearer ${bearer_id}
+    ${response}=    Stop Traffic    ${ue_id}    ${bearer_id}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+Traffic should be cleared for UE ${ue_id} on bearer ${bearer_id}
+    ${traffic}=    Get Traffic Stats    ${ue_id}    ${bearer_id}
+    Log    Bearer traffic after stop: ${traffic.json()}
+    Should Be Equal As Integers    ${traffic.status_code}    200
+    Should Be Equal As Integers    ${traffic.json()}[rx_bps]    0
+
+UE ${ue_id} should have zero aggregated traffic statistics
+    ${ue_stats}=    Get UE Stats For UE    ${ue_id}
+    Log    UE stats after stop: ${ue_stats}
+    Should Be Equal As Integers    ${ue_stats}[total_rx_bps]    0
+    Should Be Equal As Integers    ${ue_stats}[total_tx_bps]    0
+
+Verify zero aggregated traffic statistics for UE ${ue_id}
+    ${ue_stats}=    Get UE Stats For UE    ${ue_id}
+    Should Be Equal As Integers    ${ue_stats}[total_rx_bps]    0
+    Should Be Equal As Integers    ${ue_stats}[total_tx_bps]    0
+
+Dedicated bearer ${bearer_id} is added to UE ${ue_id}
+    ${response}=    Add Bearer    ${ue_id}    ${bearer_id}
+    Set Test Variable    ${ADD_BEARER_RESPONSE}    ${response}
+
+Add bearer request for UE ${ue_id} should be rejected
+    Should Be Equal As Integers    ${ADD_BEARER_RESPONSE.status_code}    400
+    Should Be Equal    ${ADD_BEARER_RESPONSE.json()}[detail]    UE not found
