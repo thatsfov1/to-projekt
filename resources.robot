@@ -137,6 +137,7 @@ Verify Bearer Does Not Exist
     Should Be Equal As Integers    ${response.status_code}    200
     Dictionary Should Not Contain Key    ${response.json()}[bearers]    ${bearer_id}
 
+
 # ==========================
 
 # UE
@@ -397,3 +398,23 @@ Bearer list for UE ${ue_id} contains all of ${bearers} attached bearers
     ${count}=    Get Length    ${response_list.json()}[bearers]
     Should Be Equal As Integers    ${count}    3
     Dictionary Should Contain Key    ${response_list.json()}[bearers]    ${DEFAULT_BEARER_ID}
+
+UE ${ue_id} has no bearer ${bearer_id}
+    Verify Bearer Does Not Exist    ${ue_id}    ${bearer_id}
+
+Default bearer is removed from UE ${ue_id}
+    ${response}=    Remove Bearer    ${ue_id}    ${DEFAULT_BEARER_ID}
+    Set Test Variable    ${REMOVE_DEFAULT_BEARER_RESPONSE}    ${response}
+
+Remove default bearer request for UE ${ue_id} should be rejected
+    Should Be Equal As Integers    ${REMOVE_DEFAULT_BEARER_RESPONSE.status_code}    400
+    Should Be Equal    ${REMOVE_DEFAULT_BEARER_RESPONSE.json()}[detail]    Cannot remove default bearer
+
+Remove bearer request for non-existing UE ${ue_id} should be rejected
+    Should Be Equal As Integers    ${REMOVE_BEARER_RESPONSE.status_code}    400
+    Should Be Equal    ${REMOVE_BEARER_RESPONSE.json()}[detail]    UE not found
+
+Traffic request for non-existing UE ${ue_id} on bearer ${bearer_id} should be rejected
+    ${traffic}=    Get Traffic Stats    ${ue_id}    ${bearer_id}
+    Should Be Equal As Integers    ${traffic.status_code}    400
+    Should Be Equal    ${traffic.json()}[detail]    UE not found

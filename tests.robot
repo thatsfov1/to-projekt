@@ -117,58 +117,51 @@ Test Teardown     Verify Clean State
     [Documentation]    Verify that removing default bearer (ID=9) is not allowed.
     [Tags]    negative    bearer    remove    validation
 
-    ${ue_id}=    Set Variable    ${DEFAULT_UE_ID}
-
-    Log    Step 1: Attach UE with default bearer
-    Attach UE And Verify Default Bearer    ${ue_id}
-
-    Log    Step 2: Attempt to remove default bearer
-    ${response}=    Remove Bearer    ${ue_id}    ${DEFAULT_BEARER_ID} 
-
-    Log    Step 3: Verify request is rejected
-    Should Be Equal As Integers    ${response.status_code}    400
-
-    Log    Step 5: Verify error message is returned
-    Should Be Equal    ${response.json()}[detail]    Cannot remove default bearer
-
-    Log    Step 6: Verify UE state remains unchanged
-    Verify UE Does Not Exist    ${ue_id}
-
-    Log    Step 7: Verify no bearers are affected
-    ${stats_after}=    Get UE Stats
-    Should Be Equal As Integers    ${stats_after}[ue_count]         ${stats_before}[ue_count]
-    Should Be Equal As Integers    ${stats_after}[bearer_count]     ${stats_before}[bearer_count]
-    Should Be Equal As Integers    ${stats_after}[total_tx_bps]     ${stats_before}[total_tx_bps]
-    Should Be Equal As Integers    ${stats_after}[total_rx_bps]     ${stats_before}[total_rx_bps]
+    Given UE ${DEFAULT_UE_ID} is attached with default bearer
+    And current system statistics are captured
+    When default bearer is removed from UE ${DEFAULT_UE_ID}
+    Then remove default bearer request for UE ${DEFAULT_UE_ID} should be rejected
+    And UE ${DEFAULT_UE_ID} should still have default bearer
+    And system statistics should remain unchanged
 
 
 11_Start_traffic_for_non_existing_bearer_rejected
     [Documentation]    Verify that starting traffic on non-existing bearer is rejected.
     [Tags]    negative    traffic    bearer    validation
 
-    ${ue_id}=        Set Variable    ${DEFAULT_UE_ID}
-    ${bearer_id}=    Set Variable    5
+    Given UE ${DEFAULT_UE_ID} is attached with default bearer
+    And UE ${DEFAULT_UE_ID} has no bearer 5
+    When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer 5 with 10 transfer speed
+    Then start traffic request should be rejected for UE ${DEFAULT_UE_ID} on bearer 5
+    And traffic should not be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
 
-    Log    Step 1: Attach UE (only default bearer exists)
-    Attach UE And Verify Default Bearer    ${ue_id}
+12_Start_traffic_for_detached_ue_rejected
+    [Documentation]    Verify that starting traffic for a detached UE is rejected.
+    [Tags]    negative    traffic    ue    validation
 
-    Log    Step 2: Attempt to start traffic on non-existing bearer
-    ${response}=    Start Traffic    ${ue_id}    ${bearer_id}    10
+    Given UE ${DEFAULT_UE_ID} is not connected to the network
+    And current system statistics are captured
+    When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with 10 transfer speed
+    Then start traffic request should be rejected for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    And traffic request for non-existing UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} should be rejected
+    And system statistics should remain unchanged
 
-    Log    Step 3: Verify request is rejected
-    Should Be Equal As Integers    ${response.status_code}    400
+13_Remove_bearer_from_detached_ue_rejected
+    [Documentation]    Verify that removing bearer from detached UE is rejected.
+    [Tags]    negative    bearer    remove    ue
 
-    Log    Step 4: Verify error message
-    Should Contain    ${response.json()}[detail]    Bearer
-
-    Log    Step 5: Verify no traffic started on default bearer
-    ${traffic}=    Get Traffic Stats    ${ue_id}    9
+    Given UE ${DEFAULT_UE_ID} is not connected to the network
+    And current system statistics are captured
+    When non-existing bearer ${TEST_BEARER_ID} is removed from UE ${DEFAULT_UE_ID}
+    Then remove bearer request for non-existing UE ${DEFAULT_UE_ID} should be rejected
+    And UE ${DEFAULT_UE_ID} should remain disconnected
+    And system statistics should remain unchanged
 
 # ==========================
 
 # Łukasz
 
-12_Add_bearer_rejected_for_duplicate_bearer_id
+14_Add_bearer_rejected_for_duplicate_bearer_id
     [Documentation]    Verify that adding the same bearer twice is rejected.
     [Tags]    negative    bearer    add
 
@@ -178,7 +171,7 @@ Test Teardown     Verify Clean State
     Then Attach request for UE ${DEFAULT_UE_ID} should be rejected
     And UE ${DEFAULT_UE_ID} should have bearer ${TEST_BEARER_ID}
 
-13_1_Start_traffic_with_zero_transfer_is_rejected
+15_1_Start_traffic_with_zero_transfer_is_rejected
     [Tags]    boundary    traffic    bearer    validation
 
     Given UE ${DEFAULT_UE_ID} is attached with default bearer
@@ -186,14 +179,14 @@ Test Teardown     Verify Clean State
     Then start traffic request should be rejected for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
     And traffic should not be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
 
-13_2_Start_traffic_with_minimum_transfer_is_accepted
+15_2_Start_traffic_with_minimum_transfer_is_accepted
     [Tags]    boundary    traffic    bearer    validation
 
     Given UE ${DEFAULT_UE_ID} is attached with default bearer
     When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with 1 transfer speed
     Then traffic should be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
 
-13_3_Start_traffic_with_maximum_transfer_is_accepted
+15_3_Start_traffic_with_maximum_transfer_is_accepted
 
     [Tags]    boundary    traffic    bearer    validation
 
@@ -201,7 +194,7 @@ Test Teardown     Verify Clean State
     When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with 100 transfer speed
     Then traffic should be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
 
-13_4_Start_traffic_above_maximum_transfer_is_rejected
+15_4_Start_traffic_above_maximum_transfer_is_rejected
 
     [Tags]    boundary    traffic    bearer    validation
 
@@ -210,7 +203,7 @@ Test Teardown     Verify Clean State
     Then start traffic request should be rejected for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
     And traffic should not be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
 
-14_Attach_operation_on_already_attached_ue_error_scenario
+16_Attach_operation_on_already_attached_ue_error_scenario
     [Documentation]    Verify that attach operation is rejected for UE that is already attached to the network.
     [Tags]    negative    attach    ue
     
@@ -220,7 +213,7 @@ Test Teardown     Verify Clean State
     Then attach request for UE ${DEFAULT_UE_ID} should be rejected with message UE already attached
     And UE ${DEFAULT_UE_ID} exists
 
-15_List_bearers_contains_default_and_all_added_dedicated
+17_List_bearers_contains_default_and_all_added_dedicated
     [Documentation]    Verify that displaying bearer list contains all attached items
     [Tags]    positive    list    bearer
 
