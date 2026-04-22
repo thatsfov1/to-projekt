@@ -176,15 +176,17 @@ Stop Traffic
 
 # DOMAIN LEVEL LANGUAGE KEYWORDS 
 
-Start traffic is requested for ${ue_id} at ${bearer_id} with ${mbps} transfer speed
+Start traffic is requested for UE ${ue_id} on bearer ${bearer_id} with ${mbps} transfer speed
     ${response}=    Start traffic    ${ue_id}    ${bearer_id}    ${mbps}
     Set Test Variable    ${START_TRAFFIC_RESPONSE}    ${response}
 
-Start traffic operation for UE ${ue_id} at ${bearer_id} should be rejected and traffic wasnt started
-    ${traffic_stats}=    Get Traffic Stats    ${ue_id}    ${bearer_id}
-    
+Traffic should not be active for UE ${ue_id} on bearer ${bearer_id}
+    ${traffic}=    Get Traffic Stats    ${ue_id}    ${bearer_id}
+    Should Be Equal As Integers    ${traffic.status_code}    200
+    Should Be Equal As Integers    ${traffic.json()}[rx_bps]    0
+
+Start traffic request should be rejected for UE ${ue_id} on bearer ${bearer_id}
     Should Be Equal As Integers    ${START_TRAFFIC_RESPONSE.status_code}    400
-    Should Be Equal As Integers    ${traffic_stats.json()}[rx_bps]    0
 
 UE ${ue_id} is attached with default bearer
     Attach UE And Verify Default Bearer    ${ue_id}
@@ -353,6 +355,10 @@ Dedicated bearer ${bearer_id} is added to UE ${ue_id}
     ${response}=    Add Bearer    ${ue_id}    ${bearer_id}
     Set Test Variable    ${ADD_BEARER_RESPONSE}    ${response}
 
+Dedicated bearers ${bearer_id_one} and ${bearer_id_two} is added to UE ${ue_id}
+    Add Bearer    ${ue_id}    ${bearer_id_one}
+    Add Bearer    ${ue_id}    ${bearer_id_two}
+
 Add bearer request for UE ${ue_id} should be rejected
     Should Be Equal As Integers    ${ADD_BEARER_RESPONSE.status_code}    400
     Should Be Equal    ${ADD_BEARER_RESPONSE.json()}[detail]    UE not found
@@ -385,3 +391,9 @@ Attach is requested for out-of-range UE ${ue_id}
 
 Attach request for out-of-range UE ${ue_id} should be rejected
     Should Be Equal As Integers    ${ATTACH_OUT_OF_RANGE_RESPONSE.status_code}    400
+
+Bearer list for UE ${ue_id} contains all of ${bearers} attached bearers
+    ${response_list}=    Get UE    ${ue_id}
+    ${count}=    Get Length    ${response_list.json()}[bearers]
+    Should Be Equal As Integers    ${count}    3
+    Dictionary Should Contain Key    ${response_list.json()}[bearers]    ${DEFAULT_BEARER_ID}
