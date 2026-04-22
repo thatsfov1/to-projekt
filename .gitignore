@@ -1,8 +1,7 @@
-﻿################################################################################
-# Ten plik .gitignore został utworzony automatycznie przez Microsoft(R) Visual Studio.
-################################################################################
-
 /.vs
+log.html
+output.xml
+report.html
 
 log.html
 report.html
