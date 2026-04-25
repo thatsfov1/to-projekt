@@ -165,59 +165,57 @@ Test Teardown     Verify Clean State
     [Documentation]    Verify that adding the same bearer twice is rejected.
     [Tags]    negative    bearer    add
 
-    Given UE ${DEFAULT_UE_ID} is attached with default bearer
-    And UE ${DEFAULT_UE_ID} has dedicated bearer ${TEST_BEARER_ID}
-    When attach duplicated bearer ${TEST_BEARER_ID} to UE ${DEFAULT_UE_ID}
-    Then Attach request for UE ${DEFAULT_UE_ID} should be rejected
-    And UE ${DEFAULT_UE_ID} should have bearer ${TEST_BEARER_ID}
+    Given UE 10 is attached with default bearer
+    And UE 10 has dedicated bearer 1
+    When attach duplicated bearer 1 to UE 10
+    Then Attach request for UE 10 should be rejected
+    And UE 10 should have bearer 1
 
 15_1_Start_traffic_with_zero_transfer_is_rejected
     [Tags]    boundary    traffic    bearer    validation
 
-    Given UE ${DEFAULT_UE_ID} is attached with default bearer
-    When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with 0 transfer speed
-    Then start traffic request should be rejected for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
-    And traffic should not be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    Given UE 10 is attached with default bearer
+    When start traffic is requested for UE 10 on bearer 9 with 0 transfer speed
+    Then start traffic request should be rejected for UE 10 on bearer 9
+    And traffic should not be active for UE 10 on bearer 9
 
 15_2_Start_traffic_with_minimum_transfer_is_accepted
     [Tags]    boundary    traffic    bearer    validation
 
-    Given UE ${DEFAULT_UE_ID} is attached with default bearer
-    When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with 1 transfer speed
-    Then traffic should be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    Given UE 10 is attached with default bearer
+    When start traffic is requested for UE 10 on bearer 9 with 1 transfer speed
+    Then traffic should be active for UE 10 on bearer 9
 
 15_3_Start_traffic_with_maximum_transfer_is_accepted
-
     [Tags]    boundary    traffic    bearer    validation
 
-    Given UE ${DEFAULT_UE_ID} is attached with default bearer
-    When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with 100 transfer speed
-    Then traffic should be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    Given UE 10 is attached with default bearer
+    When start traffic is requested for UE 10 on bearer 9 with 100 transfer speed
+    Then traffic should be active for UE 10 on bearer 9
 
 15_4_Start_traffic_above_maximum_transfer_is_rejected
-
     [Tags]    boundary    traffic    bearer    validation
 
-    Given UE ${DEFAULT_UE_ID} is attached with default bearer
-    When start traffic is requested for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID} with 101 transfer speed
-    Then start traffic request should be rejected for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
-    And traffic should not be active for UE ${DEFAULT_UE_ID} on bearer ${DEFAULT_BEARER_ID}
+    Given UE 10 is attached with default bearer
+    When start traffic is requested for UE 10 on bearer 9 with 101 transfer speed
+    Then start traffic request should be rejected for UE 10 on bearer 9
+    And traffic should not be active for UE 10 on bearer 9
 
 16_Attach_operation_on_already_attached_ue_error_scenario
     [Documentation]    Verify that attach operation is rejected for UE that is already attached to the network.
     [Tags]    negative    attach    ue
     
-    Given UE ${DEFAULT_UE_ID} is attached with default bearer
+    Given UE 10 is attached with default bearer
     And current system statistics are captured
-    When reattach UE ${DEFAULT_UE_ID} with default bearer
-    Then attach request for UE ${DEFAULT_UE_ID} should be rejected with message UE already attached
-    And UE ${DEFAULT_UE_ID} exists
+    When reattach UE 10 with default bearer
+    Then attach request for UE 10 should be rejected with message UE already attached
+    And UE 10 exists
 
 17_List_bearers_contains_default_and_all_added_dedicated
     [Documentation]    Verify that displaying bearer list contains all attached items
     [Tags]    positive    list    bearer
 
-    Given UE ${DEFAULT_UE_ID} is attached with default bearer
+    Given UE 10 is attached with default bearer
     And current system statistics are captured
-    When dedicated bearers 1 and 2 is added to UE ${DEFAULT_UE_ID}
-    Then Bearer list for UE ${DEFAULT_UE_ID} contains all of 3 attached bearers
+    When dedicated bearers 1 and 2 is added to UE 10
+    Then Bearer list for UE 10 contains all of 3 attached bearers
