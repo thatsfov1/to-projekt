@@ -211,7 +211,7 @@ Test Teardown     Verify Clean State
     Then attach request for UE 10 should be rejected with message UE already attached
     And UE 10 exists
 
-17_List_bearers_contains_default_and_all_added_dedicated
+17_List_bearers_contains_default_and_all_added_bearers
     [Documentation]    Verify that displaying bearer list contains all attached items
     [Tags]    positive    list    bearer
 
