@@ -334,6 +334,7 @@ Traffic should be active for UE ${ue_id} on bearer ${bearer_id}
 Traffic is stopped for UE ${ue_id} on bearer ${bearer_id}
     ${response}=    Stop Traffic    ${ue_id}    ${bearer_id}
     Should Be Equal As Integers    ${response.status_code}    200
+    Sleep    1s
 
 Traffic should be cleared for UE ${ue_id} on bearer ${bearer_id}
     ${traffic}=    Get Traffic Stats    ${ue_id}    ${bearer_id}
